@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elegant Digital Clock</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --clock-bg: #131a26;
+            --accent-glow: #00f2fe;
+            --text-main: #ffffff;
+            --text-muted: #6b7c96;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .clock-container {
+            background: var(--clock-bg);
+            padding: 40px 60px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 
+                        0 0 20px rgba(0, 242, 254, 0.1);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            min-width: 320px;
+        }
+
+        .date-display {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-muted);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            min-height: 24px;
+        }
+
+        .time-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: baseline;
+        }
+
+        .time-display {
+            font-size: 80px;
+            font-weight: 700;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 20px rgba(0, 242, 254, 0.6);
+            letter-spacing: 2px;
+        }
+
+        .ampm-display {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--accent-glow);
+            margin-left: 15px;
+            text-transform: uppercase;
+            min-width: 45px;
+            text-align: left;
+        }
+
+        .toggle-container {
+            margin-top: 25px;
+        }
+
+        .toggle-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+        }
+
+        .toggle-btn:hover {
+            background: var(--accent-glow);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            border-color: var(--accent-glow);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="clock-container">
+        <!-- Removed placeholder text to avoid visual flickering on launch -->
+        <div class="date-display" id="date-box"></div>
+        
+        <div class="time-wrapper">
+            <div class="time-display" id="time-box"></div>
+            <div class="ampm-display" id="ampm-box"></div>
+        </div>
+
+        <div class="toggle-container">
+            <button class="toggle-btn" id="format-toggle">SWITCH TO 24H</button>
+        </div>
+    </div>
+
+    <script>
+        let is24HourFormat = false;
+
+        const timeBox = document.getElementById('time-box');
+        const ampmBox = document.getElementById('ampm-box');
+        const dateBox = document.getElementById('date-box');
+        const formatToggle = document.getElementById('format-toggle');
+
+        function updateClock() {
+            const now = new Date();
+            
+            let hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            let ampm = '';
+
+            if (!is24HourFormat) {
+                ampm = hours >= 12 ? 'PM' : 'AM';
+                hours = hours % 12;
+                hours = hours ? hours : 12; 
+                // Kept as a raw number style instead of forcing '0' padding for cleaner 12H readability
+                hours = String(hours); 
+            } else {
+                hours = String(hours).padStart(2, '0');
+                ampm = ''; 
+            }
+
+            timeBox.textContent = `${hours}:${minutes}:${seconds}`;
+            ampmBox.textContent = ampm;
+
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            dateBox.textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+        }
+
+        formatToggle.addEventListener('click', () => {
+            is24HourFormat = !is24HourFormat;
+            formatToggle.textContent = is24HourFormat ? 'SWITCH TO 12H' : 'SWITCH TO 24H';
+            updateClock(); 
+        });
+
+        // Initialize immediately to prevent any empty elements from showing
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

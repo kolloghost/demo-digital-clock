@@ -3,14 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Elegant Digital Clock</title>
+    <title>Elegant Digital Clock with Themes</title>
     <style>
-        :root {
+        /* Theme Configuration Presets */
+        :root, [data-theme="cyberpunk"] {
             --bg-color: #0b0f19;
             --clock-bg: #131a26;
             --accent-glow: #00f2fe;
             --text-main: #ffffff;
             --text-muted: #6b7c96;
+        }
+
+        [data-theme="matrix"] {
+            --bg-color: #050805;
+            --clock-bg: #0d140d;
+            --accent-glow: #00ff41;
+            --text-main: #00ff41;
+            --text-muted: #008f11;
+        }
+
+        [data-theme="sunset"] {
+            --bg-color: #1a0b1e;
+            --clock-bg: #26132b;
+            --accent-glow: #ff007f;
+            --text-main: #fff0f5;
+            --text-muted: #9d6b9e;
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f4f6f9;
+            --clock-bg: #ffffff;
+            --accent-glow: #4f46e5;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
         }
 
         body {
@@ -22,17 +47,23 @@
             height: 100vh;
             margin: 0;
             overflow: hidden;
+            transition: background-color 0.4s ease;
         }
 
         .clock-container {
             background: var(--clock-bg);
             padding: 40px 60px;
             border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 
-                        0 0 20px rgba(0, 242, 254, 0.1);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
             text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.03);
             min-width: 320px;
+            transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        [data-theme="light"] .clock-container {
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
         }
 
         .date-display {
@@ -43,12 +74,14 @@
             text-transform: uppercase;
             margin-bottom: 10px;
             min-height: 24px;
+            transition: color 0.4s ease;
         }
 
         .time-wrapper {
             display: flex;
             justify-content: center;
             align-items: baseline;
+            gap: 10px; /* Replaced margin-left with modern flex-gap to avoid rendering jitters */
         }
 
         .time-display {
@@ -56,22 +89,30 @@
             font-weight: 700;
             color: var(--text-main);
             font-variant-numeric: tabular-nums;
-            text-shadow: 0 0 20px rgba(0, 242, 254, 0.6);
+            text-shadow: 0 0 20px var(--accent-glow);
             letter-spacing: 2px;
+            transition: color 0.4s ease, text-shadow 0.4s ease;
+        }
+
+        [data-theme="light"] .time-display {
+            text-shadow: none;
         }
 
         .ampm-display {
             font-size: 24px;
             font-weight: 600;
             color: var(--accent-glow);
-            margin-left: 15px;
             text-transform: uppercase;
             min-width: 45px;
             text-align: left;
+            transition: color 0.4s ease;
         }
 
-        .toggle-container {
+        .controls-container {
             margin-top: 25px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
         }
 
         .toggle-btn {
@@ -85,12 +126,18 @@
             cursor: pointer;
             transition: all 0.3s ease;
             letter-spacing: 1px;
+            outline: none;
+        }
+
+        [data-theme="light"] .toggle-btn {
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.08);
         }
 
         .toggle-btn:hover {
             background: var(--accent-glow);
             color: var(--bg-color);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            box-shadow: 0 0 15px var(--accent-glow);
             border-color: var(--accent-glow);
         }
     </style>
@@ -98,7 +145,6 @@
 <body>
 
     <div class="clock-container">
-        <!-- Removed placeholder text to avoid visual flickering on launch -->
         <div class="date-display" id="date-box"></div>
         
         <div class="time-wrapper">
@@ -106,18 +152,25 @@
             <div class="ampm-display" id="ampm-box"></div>
         </div>
 
-        <div class="toggle-container">
+        <div class="controls-container">
             <button class="toggle-btn" id="format-toggle">SWITCH TO 24H</button>
+            <button class="toggle-btn" id="theme-toggle">🎨 THEME: CYBERPUNK</button>
         </div>
     </div>
 
     <script>
+        // Core Clock State Management
         let is24HourFormat = false;
+        let currentThemeIndex = 0;
+        
+        const themes = ['cyberpunk', 'matrix', 'sunset', 'light'];
+        const themeLabels = ['CYBERPUNK', 'MATRIX', 'SUNSET', 'LIGHT MODE'];
 
         const timeBox = document.getElementById('time-box');
         const ampmBox = document.getElementById('ampm-box');
         const dateBox = document.getElementById('date-box');
         const formatToggle = document.getElementById('format-toggle');
+        const themeToggle = document.getElementById('theme-toggle');
 
         function updateClock() {
             const now = new Date();
@@ -131,7 +184,6 @@
                 ampm = hours >= 12 ? 'PM' : 'AM';
                 hours = hours % 12;
                 hours = hours ? hours : 12; 
-                // Kept as a raw number style instead of forcing '0' padding for cleaner 12H readability
                 hours = String(hours); 
             } else {
                 hours = String(hours).padStart(2, '0');
@@ -144,16 +196,26 @@
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             
-            dateBox.textContent = `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+            dateBox.textContent = `${days[now.getDay()]} ,  ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
         }
 
+        // Event Listener - 12H / 24H Format Toggling
         formatToggle.addEventListener('click', () => {
             is24HourFormat = !is24HourFormat;
             formatToggle.textContent = is24HourFormat ? 'SWITCH TO 12H' : 'SWITCH TO 24H';
             updateClock(); 
         });
 
-        // Initialize immediately to prevent any empty elements from showing
+        // Event Listener - Carousel Theme Cycler 
+        themeToggle.addEventListener('click', () => {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            const nextTheme = themes[currentThemeIndex];
+            
+            document.documentElement.setAttribute('data-theme', nextTheme);
+            themeToggle.textContent = `🎨 THEME: ${themeLabels[currentThemeIndex]}`;
+        });
+
+        // Initial App Mount Call
         updateClock();
         setInterval(updateClock, 1000);
     </script>
